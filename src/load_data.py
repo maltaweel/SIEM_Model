@@ -4,7 +4,7 @@ Created on Dec 18, 2024
 @author: mark-altaweel
 '''
 
-import sys, os
+import sys, os, math
 import utm
 from geopy.distance import distance
 from geopy.point import Point
@@ -60,7 +60,7 @@ def calculateDistance(s):
         i_z=s.settlement_z[i]
                 
         cord1=utm.to_latlon(i_x, i_y, 32, 'N')
-        coords_1 = Point(cord1[0],cord1[1],i_z)
+        coords_1 = Point(cord1[0],cord1[1])
         
         for j in setts:
                   
@@ -73,10 +73,14 @@ def calculateDistance(s):
             
             key=str(i)+'-'+str(j)
             cord2=utm.to_latlon(j_x, j_y, 32, 'N')
-            coords_2=Point(cord2[0],cord2[1],j_z)
+            coords_2=Point(cord2[0],cord2[1])
             
     
-            dist=distance(coords_1, coords_2).km 
+            dist=distance(coords_1, coords_2).m 
+            
+            elev=math.fabs(i_z-j_z)
+            
+            dist=math.sqrt(dist**2 + elev**2)
             
             s.distance[key]=dist
                
@@ -92,7 +96,7 @@ if __name__ == "__main__":
     s=readData(file,alpha,beta)
     calculateDistance(s)
     
-    for i in range(0,iterations):
+    for i in range(0,int(iterations)):
         s.setFlow()
         s.calculate_flow()
         s.adjustAdvantages()
