@@ -5,8 +5,10 @@ Created on Dec 18, 2024
 '''
 
 import sys, os
+import utm
+from geopy.distance import distance
+from geopy.point import Point
 import  geopandas as gpd
-import geopy.distance
 from settlement import Settlement
 from html5lib.filters import alphabeticalattributes
 
@@ -23,7 +25,7 @@ def readData(file,alpha,beta):
     
     lat=gdf['LAT']
     lon=gdf['LON']
-    elevation=gdf['Altitudine']
+    elevation=gdf['Z1']
     
     s=Settlement()
     
@@ -56,23 +58,25 @@ def calculateDistance(s):
         i_y=s.settlement_y[i]
         i_x=s.settlement_x[i]
         i_z=s.settlement_z[i]
-        
-        coords_1 = (i_x,i_y,i_z)
+                
+        cord1=utm.to_latlon(i_x, i_y, 32, 'N')
+        coords_1 = Point(cord1[0],cord1[1],i_z)
         
         for j in setts:
-                   
+                  
             if i==j:
                 continue
             
-            j_y=s.settlement_y[i]
-            j_x=s.settlement_x[i]
-            j_z=s.settlement_z[i]
+            j_y=s.settlement_y[j]
+            j_x=s.settlement_x[j]
+            j_z=s.settlement_z[j]
             
             key=str(i)+'-'+str(j)
-               
-            coords_2=(j_x,j_y,j_z)
-             
-            dist=geopy.distance.geodesic(coords_1, coords_2).km 
+            cord2=utm.to_latlon(j_x, j_y, 32, 'N')
+            coords_2=Point(cord2[0],cord2[1],j_z)
+            
+    
+            dist=distance(coords_1, coords_2).km 
             
             s.distance[key]=dist
                
@@ -83,8 +87,17 @@ if __name__ == "__main__":
     file = str(sys.argv[1])
     alpha=float(sys.argv[2])
     beta=float(sys.argv[3])
+    iterations=float(sys.argv[4])
     
     s=readData(file,alpha,beta)
     calculateDistance(s)
+    
+    for i in range(0,iterations):
+        s.setFlow()
+        s.calculate_flow()
+        s.adjustAdvantages()
+        s.adjustPopulation()
+    
+    
     
     
