@@ -22,9 +22,11 @@ class Settlement:
     totalPopulation=100000
     
     def setFlow(self):
+        print('reset flow')
+        
         for i in self.settlements:
             
-            self.flow[i]=0.0
+            self.flow[i]=1.0
             
             
     def calculate_flow(self):
@@ -34,6 +36,7 @@ class Settlement:
         for i in self.settlements:
             
             pop=self.population[i]
+            totalAttract=self.totalAttractiveness(i)
             
             for j in sets:
                 if i==j:
@@ -44,13 +47,31 @@ class Settlement:
                 dist=self.distance[key]
                 parta=math.pow(attract,self.alpha)*math.pow(math.e,-self.beta*dist)
                 
-                fl=pop*(parta/self.totalAttractiveness())
+                if totalAttract==0.0:
+                    print('stop')
+                fl=pop*(parta/totalAttract)
                 
                 existingFlow=self.flow[j]
                 self.flow[j]=existingFlow+fl
                 
-  
-    def adjustAttractiveness(self):
+    
+    def totalAttractiveness(self,i):
+        totalAttract=0.0
+
+        for k in self.attractiveness.keys():
+            if i==k:
+                continue
+            key=str(i)+'-'+str(k)
+            dist=self.distance[key]
+            attract=self.attractiveness[k]
+            attract=math.pow(attract,self.alpha)*math.pow(math.e,-self.beta*dist)
+            totalAttract+=attract+totalAttract
+            
+        
+        return totalAttract
+        
+        
+    def adjustAdvantages(self):
         
         for j in self.attractiveness.keys():
             
@@ -60,21 +81,11 @@ class Settlement:
             
             self.attractiveness[j]=newAttract
             
-    def totalAttractiveness(self):
-        totalAttract=0.0
-        for i in self.attractiveness.keys():
-            attract=self.attractiveness[i]
-            totalAttract=attract+totalAttract
-            
-        
-        return totalAttract
-        
+    
     def adjustPopulation(self):
-        
-        totalAttract=self.totalAttractiveness()
-        
+         
         for i in self.population:
-            
+            totalAttract=self.totalAttractiveness(i)
             attract=self.attractiveness[i]
             
             newPop=self.totalPopulation*(attract/totalAttract)
