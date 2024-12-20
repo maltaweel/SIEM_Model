@@ -76,7 +76,7 @@ def calculateDistance(s):
             coords_2=Point(cord2[0],cord2[1])
             
     
-            dist=distance(coords_1, coords_2).m 
+            dist=distance(coords_1, coords_2).km 
             
             elev=math.fabs(i_z-j_z)
             
