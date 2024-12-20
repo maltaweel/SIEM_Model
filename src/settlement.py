@@ -9,6 +9,7 @@ class Settlement:
     alpha=0
     beta=0
     
+    points=[]
     settlements=[]
     settlement_x={}
     settlement_y={}
@@ -64,8 +65,9 @@ class Settlement:
             key=str(i)+'-'+str(k)
             dist=self.distance[key]
             attract=self.attractiveness[k]
-            attract=math.pow(attract,self.alpha)*math.pow(math.e,-self.beta*dist)
+            attract=(math.pow(attract,self.alpha)*math.pow(math.e,-self.beta*dist))*0.0000000000000000001
             totalAttract+=attract+totalAttract
+            print(totalAttract)
             
         
         return totalAttract
