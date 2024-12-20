@@ -8,16 +8,21 @@ import sys, os, math
 import utm
 from geopy.distance import distance
 from geopy.point import Point
+from fiona.crs import from_epsg
 import  geopandas as gpd
 from settlement import Settlement
 from html5lib.filters import alphabeticalattributes
+from shapely.geometry import mapping, Polygon
+import fiona
 
+from_epsg(25832)
 
-
+pn=os.path.abspath(__file__)
+pn=pn.split("src")[0]
+    
 def readData(file,alpha,beta):
     
-    pn=os.path.abspath(__file__)
-    pn=pn.split("src")[0]
+
     path=os.path.join(pn,'data',file)
     
     
@@ -25,6 +30,7 @@ def readData(file,alpha,beta):
     
     lat=gdf['LAT']
     lon=gdf['LON']
+    p=gdf['geometry']
     elevation=gdf['Z1']
     
     s=Settlement()
@@ -34,6 +40,7 @@ def readData(file,alpha,beta):
         n+=1
         s.alpha=alpha
         s.beta=beta
+        s.points.append(p[i])
         s.settlements.append(i)
         s.settlement_x[i]=lon[i]
         s.settlement_y[i]=lat[i]
@@ -47,6 +54,29 @@ def readData(file,alpha,beta):
     s.totalPopulation=n*s.population[0]  
     
     return s  
+
+def outputResults(s):
+    
+    # Define a polygon feature geometry with one attribute
+    schema = {
+    'geometry': 'Point',
+    'properties': {'id': 'int', 'flow':'float','attractiveness':'float','population':'float'},
+    }
+
+    path=os.path.join(pn,'output','output.shp')
+    with fiona.open(path, 'w', 'ESRI Shapefile',schema) as c:
+        
+        for i in s.settlements:
+            c.write({
+                'geometry': mapping(s.points[i]),
+                'properties': {'id': s.settlements[i],'flow':s.flow[i],'attractiveness':s.attractiveness[i],
+                               'population':s.population[i]},
+                })
+
+    
+    
+        
+         
     
     
 def calculateDistance(s):
@@ -102,6 +132,6 @@ if __name__ == "__main__":
         s.adjustAdvantages()
         s.adjustPopulation()
     
-    
+    outputResults(s)
     
     
