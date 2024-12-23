@@ -57,13 +57,24 @@ def readData(file,alpha,beta):
 
 def outputResults(s):
     
-    # Define a polygon feature geometry with one attribute
+    # Define a point feature geometry with one attribute
     schema = {
     'geometry': 'Point',
     'properties': {'id': 'int', 'flow':'float','attractiveness':'float','population':'float'},
     }
+    
+    schema2 = {
+    'geometry':'LineString',
+    'properties':[('id','str'),('flow','float')]
+    }
+    
+   
+    
 
     path=os.path.join(pn,'output','output.shp')
+    
+    path2=os.path.join(pn,'output','line')
+    
     with fiona.open(path, 'w', 'ESRI Shapefile',schema) as c:
         
         for i in s.settlements:
@@ -72,11 +83,38 @@ def outputResults(s):
                 'properties': {'id': s.settlements[i],'flow':s.flow[i],'attractiveness':s.attractiveness[i],
                                'population':s.population[i]},
                 })
-
-    
-    
+            
+            
         
-         
+        c.close()   
+            
+    
+    with fiona.open(path2, 'w', 'ESRI Shapefile',schema2) as c2:        #open a fiona object
+        
+            settsOther=s.settlements
+            for i in s.settlements:
+            
+                for j in settsOther:
+                    if i==j:
+                        continue
+                
+                    p1=s.points[i]
+                    p2=s.points[j]
+                
+                    xyList=[(p1.x,p1.y),(p2.x,p2.y)]
+                
+                    key=str(i)+'-'+str(j)
+                
+                    fl=s.linkFlow[key]
+                
+                    c2.write({
+                        'geometry': {'type':'LineString',
+                                     'coordinates': xyList},
+                        'properties': {'id': key,'flow':fl},
+                        })
+                
+            c2.close()
+            
     
     
 def calculateDistance(s):
