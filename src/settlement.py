@@ -19,7 +19,7 @@ class Settlement:
     distance={}
     flow={}
     linkFlow=dict()
-    speed=0.001
+    speed=0.00000001
     constant=1
     totalPopulation=100000
     
@@ -28,7 +28,7 @@ class Settlement:
         
         for i in self.settlements:
             
-            self.flow[i]=1.0
+            self.flow[i]=0.01
             
             
     def calculate_flow(self):
@@ -49,14 +49,13 @@ class Settlement:
                 dist=self.distance[key]
                 parta=math.pow(attract,self.alpha)*math.pow(math.e,-self.beta*dist)
                 
-                if totalAttract==0.0:
-                    print('stop')
                 fl=pop*(parta/totalAttract)
                 
                 existingFlow=self.flow[j]
-                self.flow[j]=existingFlow+fl
+                self.flow[j]=fl+existingFlow
                 
                 self.linkFlow[key]=parta
+                
                 
     
     def totalAttractiveness(self,i):
@@ -68,11 +67,11 @@ class Settlement:
             key=str(i)+'-'+str(k)
             dist=self.distance[key]
             attract=self.attractiveness[k]
-            attract=(math.pow(attract,self.alpha)*math.pow(math.e,-self.beta*dist))*0.0000000000000000001
-            totalAttract+=attract+totalAttract
-            print(totalAttract)
+            attract=(math.pow(attract,self.alpha)*math.pow(math.e,-self.beta*dist))
+            totalAttract+=attract
+         
             
-        
+            
         return totalAttract
         
         
@@ -88,13 +87,23 @@ class Settlement:
             
     
     def adjustPopulation(self):
-         
+        
+      # populationNow=self.totalPopulation
         for i in self.population:
             totalAttract=self.totalAttractiveness(i)
             attract=self.attractiveness[i]
             
             newPop=self.totalPopulation*(attract/totalAttract)
             self.population[i]=int(newPop)
+            
+            print(self.population[i])
+            
+            '''
+            populationNow=populationNow-self.population[i]
+            if populationNow<0:
+                self.population[i]=self.population[i]+populationNow
+                populationNow=0
+            '''   
             
             
             
