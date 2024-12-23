@@ -18,7 +18,8 @@ class Settlement:
     attractiveness={}
     distance={}
     flow={}
-    speed=0.1
+    linkFlow=dict()
+    speed=0.001
     constant=1
     totalPopulation=100000
     
@@ -54,6 +55,8 @@ class Settlement:
                 
                 existingFlow=self.flow[j]
                 self.flow[j]=existingFlow+fl
+                
+                self.linkFlow[key]=parta
                 
     
     def totalAttractiveness(self,i):
