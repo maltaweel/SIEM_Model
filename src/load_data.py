@@ -4,7 +4,7 @@ Created on Dec 18, 2024
 @author: mark-altaweel
 '''
 
-import sys, os, math
+import sys, os, math, random
 import utm
 from geopy.distance import distance
 from geopy.point import Point
@@ -19,8 +19,17 @@ from_epsg(25832)
 
 pn=os.path.abspath(__file__)
 pn=pn.split("src")[0]
+
+def randomBootstrap(n):
+    a = random.randint(0,100)
     
-def readData(file,alpha,beta):
+    if n > a:
+        return True
+    else:
+        return False
+    
+    
+def readData(file,alpha,beta,randomN):
     
 
     path=os.path.join(pn,'data',file)
@@ -35,13 +44,20 @@ def readData(file,alpha,beta):
     
     s=Settlement()
     
-    n=0
+    numbers=[]
     for i in range(0,len(lat)):
+        if randomBootstrap(randomN) is False:
+            continue
+        else:
+            numbers.append(i)
+    
+    n=0
+    for i in numbers:
         n+=1
         s.alpha=alpha
         s.beta=beta
-        s.points.append(p[i])
-        s.settlements.append(i)
+        s.points[i]=p[i]
+        s.settlements[i]=i
         s.settlement_x[i]=lon[i]
         s.settlement_y[i]=lat[i]
         s.settlement_z[i]=elevation[i]
@@ -71,7 +87,7 @@ def outputResults(s):
    
     
 
-    path=os.path.join(pn,'output','output.shp')
+    path=os.path.join(pn,'output','output')
     
     path2=os.path.join(pn,'output','line')
     
@@ -160,8 +176,10 @@ if __name__ == "__main__":
     alpha=float(sys.argv[2])
     beta=float(sys.argv[3])
     iterations=float(sys.argv[4])
+    randomN=int(sys.argv[5])
     
-    s=readData(file,alpha,beta)
+    
+    s=readData(file,alpha,beta,randomN)
     calculateDistance(s)
     
     for i in range(0,int(iterations)):
