@@ -9,8 +9,8 @@ class Settlement:
     alpha=0
     beta=0
     
-    points=[]
-    settlements=[]
+    points={}
+    settlements={}
     settlement_x={}
     settlement_y={}
     settlement_z={}
