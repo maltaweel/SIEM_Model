@@ -20,6 +20,13 @@ from_epsg(25832)
 pn=os.path.abspath(__file__)
 pn=pn.split("src")[0]
 
+totalLinkFlow={}
+totalSettlement=[]
+totalFlow={}
+totalAttractiveness={}
+totalPopulation={}
+locations={}
+
 def randomBootstrap(n):
     a = random.randint(0,100)
     
@@ -27,6 +34,49 @@ def randomBootstrap(n):
         return True
     else:
         return False
+    
+
+def tallyResults(s):
+    
+    settsOther=s.settlements
+    for i in s.settlements:
+            
+        for j in settsOther:
+            if i==j:
+                continue
+      
+            key=str(i)+'-'+str(j)
+            
+            p1=s.points[i]
+            
+            fl=s.linkFlow[key]
+            pop=s.population[i]
+            flo=s.flow[i]
+            atract=s.attractiveness[i]
+            
+            
+            if key in totalLinkFlow:
+                fl+=totalLinkFlow[key]
+                
+            if i in totalFlow:
+                flo+=totalFlow[i]
+            
+            if i in totalAttractiveness:
+                atract+=totalAttractiveness[i]
+                
+            if i in totalPopulation:
+                pop+=totalPopulation[i]
+            
+            if i not in totalSettlement:
+                totalSettlement.append(i)
+                
+            if i not in locations:
+                locations[i]=p1
+            
+            totalLinkFlow[key]=fl 
+            totalPopulation[i]=pop 
+            totalFlow[i]=flo
+            totalAttractiveness[i]=atract          
     
     
 def readData(file,alpha,beta,randomN):
@@ -67,11 +117,11 @@ def readData(file,alpha,beta,randomN):
     
         
         
-    s.totalPopulation=n*s.population[0]  
+    s.totalPopulation=n*100  
     
     return s  
 
-def outputResults(s):
+def outputResults(s,numberofRuns):
     
     # Define a point feature geometry with one attribute
     schema = {
@@ -85,19 +135,18 @@ def outputResults(s):
     }
     
    
-    
-
     path=os.path.join(pn,'output','output')
     
     path2=os.path.join(pn,'output','line')
     
     with fiona.open(path, 'w', 'ESRI Shapefile',schema) as c:
         
-        for i in s.settlements:
+        for i in totalSettlement:
             c.write({
-                'geometry': mapping(s.points[i]),
-                'properties': {'id': s.settlements[i],'flow':s.flow[i],'attractiveness':s.attractiveness[i],
-                               'population':s.population[i]},
+                'geometry': mapping(locations[i]),
+                'properties': {'id': totalSettlement[i],'flow':float(totalFlow[i]/numberofRuns),
+                               'attractiveness':float(totalAttractiveness[i]/numberofRuns),
+                               'population':int(totalPopulation[i]/numberofRuns)},
                 })
             
             
@@ -107,26 +156,34 @@ def outputResults(s):
     
     with fiona.open(path2, 'w', 'ESRI Shapefile',schema2) as c2:        #open a fiona object
         
-            settsOther=s.settlements
-            for i in s.settlements:
+            settsOther=totalSettlement
+            for i in totalSettlement:
             
+                largestFlow=0.0
+                keepKey=''
+                keepXY=[]
                 for j in settsOther:
                     if i==j:
                         continue
                 
-                    p1=s.points[i]
-                    p2=s.points[j]
+                    p1=locations[i]
+                    p2=locations[j]
                 
                     xyList=[(p1.x,p1.y),(p2.x,p2.y)]
                 
                     key=str(i)+'-'+str(j)
                 
-                    fl=s.linkFlow[key]
+                    fl=totalLinkFlow[key]
+                    if (fl>largestFlow) and (totalFlow[j]>totalFlow[i]):
+                        keepKey=key
+                        keepXY=xyList
+                        largestFlow=fl
                 
+                if largestFlow>0.0:
                     c2.write({
                         'geometry': {'type':'LineString',
-                                     'coordinates': xyList},
-                        'properties': {'id': key,'flow':fl},
+                                     'coordinates': keepXY},
+                                     'properties': {'id': keepKey,'flow':float(largestFlow/numberofRuns)},
                         })
                 
             c2.close()
@@ -172,22 +229,27 @@ def calculateDistance(s):
 
 #launch the main
 if __name__ == "__main__":
-    file = str(sys.argv[1])
-    alpha=float(sys.argv[2])
-    beta=float(sys.argv[3])
-    iterations=float(sys.argv[4])
-    randomN=int(sys.argv[5])
+    file = str(sys.argv[1])  #shapefile settlement data
+    alpha=float(sys.argv[2]) #alpha value
+    beta=float(sys.argv[3])  #beta value
+    iterations=float(sys.argv[4]) #number of iterations
+    randomN=int(sys.argv[5]) #random number of settlements (percentage) to select
+    numberofRuns=int(sys.argv[6]) #number of total runs
     
     
-    s=readData(file,alpha,beta,randomN)
-    calculateDistance(s)
+    for nn in range(0,numberofRuns):
+        s=readData(file,alpha,beta,randomN)
+        calculateDistance(s)
     
-    for i in range(0,int(iterations)):
-        s.setFlow()
-        s.calculate_flow()
-        s.adjustAdvantages()
-        s.adjustPopulation()
     
-    outputResults(s)
+        for i in range(0,int(iterations)):
+            s.setFlow()
+            s.calculate_flow()
+            s.adjustAdvantages()
+            s.adjustPopulation()
+    
+        tallyResults(s)
+    
+    outputResults(s,numberofRuns)
     
     
