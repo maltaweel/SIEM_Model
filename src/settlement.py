@@ -1,4 +1,12 @@
 '''
+SIEM Model
+
+See Altaweel, M., Palmisano, A., Hritz, C., 2015. 
+Evaluating Settlement Structures in the Ancient Near East using Spatial Interaction Entropy Maximization. 
+Structure and Dynamics: eJournal of Anthropological and Related Sciences 8. 
+https://doi.org/10.5070/SD981028281.
+
+
 Created on Dec 18, 2024
 
 @author: mark-altaweel
