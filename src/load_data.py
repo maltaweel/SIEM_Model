@@ -1,4 +1,6 @@
 '''
+Data loader and output for SIEM model.
+
 Created on Dec 18, 2024
 
 @author: mark-altaweel
@@ -121,7 +123,7 @@ def readData(file,alpha,beta,randomN):
     
     return s  
 
-def outputResults(s,numberofRuns):
+def outputResults(numberofRuns):
     
     # Define a point feature geometry with one attribute
     schema = {
@@ -135,7 +137,7 @@ def outputResults(s,numberofRuns):
     }
     
    
-    path=os.path.join(pn,'output','output')
+    path=os.path.join(pn,'output','point_output')
     
     path2=os.path.join(pn,'output','line')
     
@@ -144,7 +146,7 @@ def outputResults(s,numberofRuns):
         for i in totalSettlement:
             c.write({
                 'geometry': mapping(locations[i]),
-                'properties': {'id': totalSettlement[i],'flow':float(totalFlow[i]/numberofRuns),
+                'properties': {'id': i,'flow':float(totalFlow[i]/numberofRuns),
                                'attractiveness':float(totalAttractiveness[i]/numberofRuns),
                                'population':int(totalPopulation[i]/numberofRuns)},
                 })
@@ -240,16 +242,15 @@ if __name__ == "__main__":
     for nn in range(0,numberofRuns):
         s=readData(file,alpha,beta,randomN)
         calculateDistance(s)
-    
+        s.setFlow()
     
         for i in range(0,int(iterations)):
-            s.setFlow()
             s.calculate_flow()
             s.adjustAdvantages()
             s.adjustPopulation()
     
         tallyResults(s)
     
-    outputResults(s,numberofRuns)
+    outputResults(numberofRuns)
     
     
