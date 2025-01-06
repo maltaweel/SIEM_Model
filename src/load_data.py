@@ -16,6 +16,7 @@ from settlement import Settlement
 from html5lib.filters import alphabeticalattributes
 from shapely.geometry import mapping, Polygon
 import fiona
+from markov_graph import Graph
 
 from_epsg(25832)
 
@@ -139,6 +140,7 @@ def outputResults(numberofRuns):
    
     path=os.path.join(pn,'output','point_output')
     
+    
     path2=os.path.join(pn,'output','line')
     
     with fiona.open(path, 'w', 'ESRI Shapefile',schema) as c:
@@ -243,6 +245,7 @@ if __name__ == "__main__":
         s=readData(file,alpha,beta,randomN)
         calculateDistance(s)
         s.setFlow()
+        
     
         for i in range(0,int(iterations)):
             s.calculate_flow()
@@ -250,6 +253,10 @@ if __name__ == "__main__":
             s.adjustPopulation()
     
         tallyResults(s)
+        
+        g=Graph()
+        g.createGraph(s)
+        g.createMarkovCluster()
     
     outputResults(numberofRuns)
     
