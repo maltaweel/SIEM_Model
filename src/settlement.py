@@ -46,7 +46,7 @@ class Settlement:
         for i in self.settlements:
             
             pop=self.population[i]
-            totalAttract=self.totalAttractiveness(i)
+            totalAttract=self.totalAttractivenessDistance(i)
             
             for j in sets:
                 if i==j:
@@ -66,7 +66,7 @@ class Settlement:
                 
                 
     
-    def totalAttractiveness(self,i):
+    def totalAttractivenessDistance(self,i):
         totalAttract=0.0
 
         for k in self.attractiveness.keys():
@@ -75,7 +75,7 @@ class Settlement:
             key=str(i)+'-'+str(k)
             dist=self.distance[key]
             attract=self.attractiveness[k]
-            attract=(math.pow(attract,self.alpha)*math.pow(math.e,-self.beta*dist))
+            attract=math.pow(attract,self.alpha)*math.pow(math.e,-self.beta*dist)
             totalAttract+=attract
          
             
@@ -92,19 +92,25 @@ class Settlement:
             newAttract=attract+(self.speed*(self.flow[j]-(self.constant*attract)))
             
             self.attractiveness[j]=newAttract
-            
+    
+    def totalAttract(self):
+        totalAttract=0.0
+        for i in self.population:
+            totalAttract+=self.attractiveness[i]
+        
+        return totalAttract  
     
     def adjustPopulation(self):
-        
-      # populationNow=self.totalPopulation
+        totalAttract=self.totalAttract()
         for i in self.population:
-            totalAttract=self.totalAttractiveness(i)
+           
             attract=self.attractiveness[i]
             
             newPop=self.totalPopulation*(attract/totalAttract)
+            print(str(attract)+':'+str(totalAttract)+':'+str(newPop))
             self.population[i]=int(newPop)
             
-            print(self.population[i])
+
             
             '''
             populationNow=populationNow-self.population[i]
