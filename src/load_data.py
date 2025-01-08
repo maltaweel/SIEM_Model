@@ -24,9 +24,11 @@ pn=os.path.abspath(__file__)
 pn=pn.split("src")[0]
 
 totalLinkFlow={}
+totalDistance={}
 totalSettlement=[]
 totalFlow={}
 totalAttractiveness={}
+totalLocations={}
 totalPopulation={}
 locations={}
 
@@ -43,6 +45,8 @@ def tallyResults(s):
     
     settsOther=s.settlements
     for i in s.settlements:
+        p1=s.points[i]
+        totalLocations[i]=(p1.x,p1.y)
             
         for j in settsOther:
             if i==j:
@@ -50,14 +54,16 @@ def tallyResults(s):
       
             key=str(i)+'-'+str(j)
             
-            p1=s.points[i]
+            
             
             fl=s.linkFlow[key]
             pop=s.population[i]
             flo=s.flow[i]
             atract=s.attractiveness[i]
             
-            
+            if i not in totalDistance:
+                totalDistance[key]=s.distance[key]
+                
             if key in totalLinkFlow:
                 fl+=totalLinkFlow[key]
                 
@@ -254,10 +260,13 @@ if __name__ == "__main__":
     
         tallyResults(s)
         
-        g=Graph()
-        g.createGraph(s)
-        g.createMarkovCluster()
+    
+ #  g=Graph()
+ #  g.createGraph(totalSettlement,totalLinkFlow,totalDistance,totalLocations)
+ #  clusters=g.createMarkovCluster(totalLocations)
+ #  g.outputResults(totalSettlement, locations, totalLinkFlow, totalFlow, numberofRuns, clusters)
     
     outputResults(numberofRuns)
+    
     
     
