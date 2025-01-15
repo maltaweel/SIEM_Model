@@ -5,11 +5,8 @@ Created on Dec 18, 2024
 
 @author: mark-altaweel
 '''
-
-import sys, os, math, random
-import utm
-from geopy.distance import distance
-from geopy.point import Point
+from copy import copy
+import sys, os, math, random, csv
 from fiona.crs import from_epsg
 import  geopandas as gpd
 from settlement import Settlement
@@ -17,6 +14,9 @@ from html5lib.filters import alphabeticalattributes
 from shapely.geometry import mapping, Polygon
 import fiona
 from markov_graph import Graph
+import gc
+from azure.mgmt.purview.models._models_py3 import AccountEndpoints,\
+    AccountPropertiesEndpoints
 
 from_epsg(25832)
 
@@ -31,6 +31,7 @@ totalAttractiveness={}
 totalLocations={}
 totalPopulation={}
 locations={}
+set_ment=None
 
 def randomBootstrap(n):
     a = random.randint(0,100)
@@ -39,7 +40,62 @@ def randomBootstrap(n):
         return True
     else:
         return False
+
+def writeOutput(s,rn):
     
+    pathway=os.path.join(pn,'output','csv_output','output_'+str(rn)+'.csv')
+    
+    fieldnames = ['Settlement','LinkedSettlement','LinkFlow','TotalDistance','Flow','Attractiveness','Location','Population']
+    #print results out
+    try:
+        with open(pathway, 'w') as csvf:
+             
+            writer = csv.DictWriter(csvf, fieldnames=fieldnames)
+
+            writer.writeheader()
+            
+            for i in totalSettlement:
+                
+                atract=totalAttractiveness[i]
+                pop=totalPopulation[i]
+                p1=locations[i]
+                flow=totalFlow[i]
+                
+                hasKey=False
+                for k in totalLinkFlow.keys():
+                    f=int(k.split('-')[1])
+                    
+                    
+                    if i == f:
+                        hasKey=True
+                        kp=int(k.split('-')[0])
+                        fl=totalLinkFlow[k]
+                        td=totalDistance[k]
+    
+                        writer.writerow({'Settlement': str(i),'LinkedSettlement':str(kp),'LinkFlow':str(fl),
+                            'TotalDistance':str(td),'Flow':str(flow),'Attractiveness':str(atract),
+                            'Location':str(str(p1.x)+' '+str(p1.y)),'Population':str(pop)})
+                        
+                    
+                if hasKey==False:
+                    writer.writerow({'Settlement': str(i),'LinkedSettlement':'NA','LinkFlow':'NA',
+                            'TotalDistance':'NA','Flow':str(flow),'Attractiveness':str(atract),
+                            'Location':str(str(p1.x)+' '+str(p1.y)),'Population':str(pop)})   
+            
+            totalAttractiveness.clear()
+            totalDistance.clear()
+            totalFlow.clear()
+            totalLinkFlow.clear()
+            totalLocations.clear()
+            totalPopulation.clear()
+            totalSettlement.clear()
+            locations.clear()
+  
+    
+    except IOError:
+        print ("Could not read file:", IOError)
+        
+        
 
 def tallyResults(s):
     
@@ -101,34 +157,67 @@ def readData(file,alpha,beta,randomN):
     p=gdf['geometry']
     elevation=gdf['Z1']
     
-    s=Settlement()
+    ss=Settlement()
     
-    numbers=[]
+    
+    n=0
     for i in range(0,len(lat)):
+        n+=1
+        ss.alpha=alpha
+        ss.beta=beta
+        ss.points[i]=p[i]
+        ss.settlements[i]=i
+        ss.settlement_x[i]=lon[i]
+        ss.settlement_y[i]=lat[i]
+        ss.settlement_z[i]=elevation[i]
+        ss.population[i]=100
+        ss.attractiveness[i]=1.0
+        ss.flow[i]=1.0
+    
+        
+        
+    ss.totalPopulation=n*100  
+    gc.collect()
+    return ss
+
+def selectRandom(settlement):
+
+    i=0
+    points={}
+    settlement_x={}
+    settlement_y={}
+    settlement_z={}
+    population={}
+    attractiveness={}
+    flow={}
+    settlements={}
+    for s in settlement.settlements.keys():
+        
         if randomBootstrap(randomN) is False:
             continue
         else:
-            numbers.append(i)
+            
+            points[i]=settlement.points[s]
+            settlements[i]=s
+            settlement_x[i]=settlement.settlement_x[s]
+            settlement_y[i]=settlement.settlement_y[s]
+            settlement_z[i]=settlement.settlement_z[s]
+            population[i]=100
+            attractiveness[i]=1.0
+            flow[i]=1.0
+            i+=1
+            
+    sNew=Settlement()
+    sNew.points=points  
+    sNew.settlements=settlements
+    sNew.settlement_x=settlement_x
+    sNew.settlement_y=settlement_y
+    sNew.settlement_z=settlement_z
+    sNew.population=population
+    sNew.attractiveness=attractiveness
+    sNew.flow=flow
     
-    n=0
-    for i in numbers:
-        n+=1
-        s.alpha=alpha
-        s.beta=beta
-        s.points[i]=p[i]
-        s.settlements[i]=i
-        s.settlement_x[i]=lon[i]
-        s.settlement_y[i]=lat[i]
-        s.settlement_z[i]=elevation[i]
-        s.population[i]=100
-        s.attractiveness[i]=1.0
-        s.flow[i]=1.0
-    
-        
-        
-    s.totalPopulation=n*100  
-    
-    return s  
+    return sNew
 
 def outputResults(numberofRuns):
     
@@ -200,40 +289,7 @@ def outputResults(numberofRuns):
             
     
     
-def calculateDistance(s):
-       
-    setts=s.settlements
-       
-    for i in s.settlements:
 
-        i_y=s.settlement_y[i]
-        i_x=s.settlement_x[i]
-        i_z=s.settlement_z[i]
-                
-        cord1=utm.to_latlon(i_x, i_y, 32, 'N')
-        coords_1 = Point(cord1[0],cord1[1])
-        
-        for j in setts:
-                  
-            if i==j:
-                continue
-            
-            j_y=s.settlement_y[j]
-            j_x=s.settlement_x[j]
-            j_z=s.settlement_z[j]
-            
-            key=str(i)+'-'+str(j)
-            cord2=utm.to_latlon(j_x, j_y, 32, 'N')
-            coords_2=Point(cord2[0],cord2[1])
-            
-    
-            dist=distance(coords_1, coords_2).km 
-            
-            elev=math.fabs(i_z-j_z)
-            
-            dist=math.sqrt(dist**2 + elev**2)
-            
-            s.distance[key]=dist
                
         
 
@@ -246,20 +302,26 @@ if __name__ == "__main__":
     randomN=int(sys.argv[5]) #random number of settlements (percentage) to select
     numberofRuns=int(sys.argv[6]) #number of total runs
     
+    totalS=readData(file,alpha,beta,randomN)
+    set_ment=totalS
     
+    print(len(totalS.settlements))
     for nn in range(0,numberofRuns):
-        s=readData(file,alpha,beta,randomN)
-        calculateDistance(s)
-        s.setFlow()
+        sett=selectRandom(totalS)
+        print(len(sett.settlements))
+        sett.setFlow()
         
     
         for i in range(0,int(iterations)):
-            s.calculate_flow()
-            s.adjustAdvantages()
-            s.adjustPopulation()
+            sett.calculate_flow()
+            sett.adjustAdvantages()
+            sett.adjustPopulation()
     
-        tallyResults(s)
-        
+        tallyResults(sett)
+        print('Run Number: '+str(nn))
+#       writeOutput(sett,nn)
+#       gc.collect()
+
     
  #  g=Graph()
  #  g.createGraph(totalSettlement,totalLinkFlow,totalDistance,totalLocations)
