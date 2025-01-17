@@ -17,6 +17,7 @@ from markov_graph import Graph
 import gc
 from azure.mgmt.purview.models._models_py3 import AccountEndpoints,\
     AccountPropertiesEndpoints
+from sympy.core import alphabets
 
 from_epsg(25832)
 
@@ -102,8 +103,10 @@ def tallyResults(s):
     settsOther=s.settlements
     for i in s.settlements:
         p1=s.points[i]
-        totalLocations[i]=(p1.x,p1.y)
-            
+        try:
+            totalLocations[i]=(p1.x,p1.y)
+        except:
+            continue
         for j in settsOther:
             if i==j:
                 continue
@@ -308,6 +311,8 @@ if __name__ == "__main__":
     print(len(totalS.settlements))
     for nn in range(0,numberofRuns):
         sett=selectRandom(totalS)
+        sett.alpha=alpha
+        sett.beta=beta
         print(len(sett.settlements))
         sett.setFlow()
         
