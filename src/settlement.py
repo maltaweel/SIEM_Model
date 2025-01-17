@@ -12,6 +12,9 @@ Created on Dec 18, 2024
 @author: mark-altaweel
 '''
 import math
+from geopy.distance import distance
+import utm
+from geopy.point import Point
 
 class Settlement:
     alpha=0
@@ -31,6 +34,63 @@ class Settlement:
     constant=1
     totalPopulation=100000
     
+    def _init_(self):
+        self.speed=0.00000001
+        self.constant=1
+    
+        
+    def clearAll(self):
+        self.points.clear()
+        self.settlements.clear()
+        self.settlement_x.clear()
+        self.settlement_y.clear()
+        self.settlement_z.clear()
+        self.population.clear()
+        self.attractiveness.clear()
+        self.distance.clear()
+        self.flow.clear()
+        self.linkFlow=dict()
+    
+    def calculateDistance(self,i,j):
+       
+  
+        
+        i_y=self.settlement_y[i]
+        i_x=self.settlement_x[i]
+        i_z=self.settlement_z[i]
+                
+      #  cord1=utm.to_latlon(i_x, i_y, 32, 'N')
+      #  coords_1 = Point(i_x,i_y)
+        
+        
+            
+        j_y=self.settlement_y[j]
+        j_x=self.settlement_x[j]
+        j_z=self.settlement_z[j]
+            
+        key=str(i)+'-'+str(j)
+     #   cord2=utm.to_latlon(j_x, j_y, 32, 'N')
+     #   coords_2=Point(j_x,j_y)
+            
+    
+      #  dist=distance(coords_1, coords_2).km 
+            
+        elev=math.fabs(i_z-j_z)
+        
+        dist1=math.sqrt(math.pow(i_x-j_x,2)+math.pow(i_y-j_y,2))
+            
+        dist=math.sqrt(dist1**2 + elev**2)*0.001
+        
+        if math.isnan(dist):
+            dist=10000000.0
+            
+        self.distance[key]=dist
+        
+       
+            
+        
+        return dist
+            
     def setFlow(self):
         print('reset flow')
         
@@ -54,7 +114,10 @@ class Settlement:
             
                 attract=self.attractiveness[j]
                 key=str(i)+'-'+str(j)
-                dist=self.distance[key]
+                if key in self.distance:
+                    dist=self.distance[key]
+                else:
+                    dist=self.calculateDistance(i, j)
                 parta=math.pow(attract,self.alpha)*math.pow(math.e,-self.beta*dist)
                 
                 fl=pop*(parta/totalAttract)
@@ -73,11 +136,18 @@ class Settlement:
             if i==k:
                 continue
             key=str(i)+'-'+str(k)
-            dist=self.distance[key]
+            
+            if key in self.distance:
+                    dist=self.distance[key]
+            else:
+                    dist=self.calculateDistance(i, k)
             attract=self.attractiveness[k]
-            attract=math.pow(attract,self.alpha)*math.pow(math.e,-self.beta*dist)
-            totalAttract+=attract
+            try:
+                newattract=math.pow(attract,self.alpha)*math.pow(math.e,-self.beta*dist)
+                totalAttract+=newattract
          
+            except:
+                print('error')
             
             
         return totalAttract
